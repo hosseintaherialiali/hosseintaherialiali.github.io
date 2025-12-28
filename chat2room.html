@@ -1,176 +1,444 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="fa">
 <head>
   <meta charset="UTF-8" />
-  <title>Code Mem Chatroom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Code Mem — Chatroom</title>
   <style>
-    body {
-      background:#0d1b1e; color:#d0f0c0;
-      font-family:"Segoe UI",Tahoma,sans-serif; direction:rtl; margin:0;
+    :root {
+      --bg: #0d1b1e; --panel: #112d32; --accent: #a8ff60; --line: #88c999;
+      --text: #d0f0c0; --muted: #88c999; --danger: #ff6b6b; --info: #7bdff2; --warn: #ffd166;
     }
-    header {
-      background:#1a3c40; color:#a8ff60;
-      text-align:center; padding:20px; font-size:1.8rem; font-weight:bold;
-    }
-    .panel {
-      background:#112d32; border:1px solid #88c999;
-      border-radius:12px; padding:16px; margin:20px auto; max-width:600px;
-    }
-    input,button,select {
-      padding:10px; border-radius:8px; border:1px solid #88c999;
-      background:rgba(136,201,153,0.08); color:#d0f0c0; margin:4px 0;
-    }
-    button { cursor:pointer; }
-    .chat-log {
-      background:#0f2428; border:1px solid #88c999;
-      border-radius:10px; padding:10px; height:300px; overflow-y:auto;
-    }
-    .msg { margin:8px 0; padding:6px; border-radius:8px;
-      background:rgba(168,255,96,0.06); }
-    .meta { font-size:0.85rem; color:#88c999; margin-bottom:4px; }
-    .admin-tools button { margin:5px 0; display:block; width:100%; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI",Tahoma,sans-serif; direction:rtl; }
+    header { background:#1a3c40; color:var(--accent); text-align:center; padding:22px 16px; font-size:1.8rem; font-weight:800; }
+    .container { max-width: 1150px; margin: 0 auto; padding: 16px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-top:16px; }
+    .title { color:var(--accent); font-weight:700; margin-bottom:10px; }
+    input,button,select { border-radius:10px; border:1px solid var(--line); background:rgba(136,201,153,0.08); color:var(--text); padding:10px 12px; font-size:1rem; }
+    button { cursor:pointer; } button.primary { background:rgba(168,255,96,0.15); border-color:var(--accent); }
+    .row { display:flex; gap:10px; }
+    .grid { display:grid; grid-template-columns: 280px 1fr; gap:16px; }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+    .profile { background:#0f2428; border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .avatar { width:64px; height:64px; border-radius:50%; background:rgba(136,201,153,0.15); border:1px solid var(--line); display:inline-flex; align-items:center; justify-content:center; font-size:1.4rem; margin-left:10px; }
+    .badge { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px dashed var(--line); border-radius:999px; color:var(--text); font-size:0.9rem; background:rgba(136,201,153,0.08); }
+    .rooms { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .rooms button { padding:8px 12px; } .rooms .active { border-color:var(--accent); background:rgba(168,255,96,0.12); }
+    .chat { display:grid; grid-template-rows:auto 1fr auto; gap:12px; height: 58vh; }
+    .chat-log { background:#0f2428; border:1px solid var(--line); border-radius:12px; padding:12px; overflow-y:auto; }
+    .msg { margin-bottom:10px; padding:8px 10px; border-radius:10px; background:rgba(168,255,96,0.06); border:1px solid rgba(168,255,96,0.2); animation: fadeIn 0.2s ease; }
+    .msg .meta { font-size:0.85rem; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+    .msg .text { white-space: pre-wrap; line-height:1.5; }
+    .msg.system { background:rgba(123,223,242,0.08); border-color:rgba(123,223,242,0.25); }
+    .msg.warn { background:rgba(255,209,102,0.08); border-color:rgba(255,209,102,0.25); }
+    .chat-input { display:flex; gap:8px; } .chat-input input { flex:1; }
+    .role-owner { color:var(--warn); } .role-commander { color:var(--accent); } .role-recruit { color:var(--info); }
+    .footer { text-align:center; color:var(--muted); font-size:0.9rem; padding:24px 12px 40px; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+    .admin-tools button { margin:5px 0; width:100%; } .codes-list { margin-top:10px; color:var(--accent); font-size:0.95rem; }
+    .reactions { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+    .reaction { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--line); border-radius:999px; background:rgba(168,255,96,0.08); color:var(--text); font-size:0.95rem; cursor:pointer; user-select:none; }
+    .reaction:hover { background:rgba(168,255,96,0.15); } .reaction .count { color:var(--muted); font-size:0.9rem; }
+    .section-title { margin-top:12px; font-weight:700; color:var(--accent); }
+    .members { margin-top:8px; display:flex; flex-direction:column; gap:8px; }
+    .member-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px; border:1px solid var(--line); border-radius:10px; background:rgba(136,201,153,0.08); }
+    .dm-panel { margin-top:12px; }
+    .dm-header { display:flex; align-items:center; justify-content:space-between; }
+    .dm-log { background:#0f2428; border:1px solid var(--line); border-radius:12px; padding:10px; height: 220px; overflow-y:auto; margin-top:8px; }
+    .dm-input { display:flex; gap:8px; margin-top:8px; }
+    .broadcast-note { color:var(--muted); font-size:0.9rem; margin-bottom:8px; }
   </style>
 </head>
 <body>
-  <header>اتحادیه Code Mem — چت</header>
+  <header>اتحادیه Code Mem — چت چنداتاقه + DM + کانال اطلاع‌رسانی</header>
 
-  <!-- Gate -->
-  <section id="gate" class="panel">
-    <h3>ورود با کد</h3>
-    <input id="codeInput" type="text" placeholder="کد ورود..." />
-    <button id="enterBtn">ورود</button>
-    <div id="gateError" style="color:#ff6b6b; margin-top:8px;"></div>
-  </section>
+  <main class="container">
+    <!-- Gate -->
+    <section id="gate" class="panel">
+      <div class="title">ورود با کد اتحادیه</div>
+      <p class="badge">🔰 قوانین کوتاه: امنیت اول، طنز دوم، اخلاق همیشه</p>
+      <div class="row" style="margin-top:10px;">
+        <input id="codeInput" type="text" placeholder="مثلاً: ownerBaranaWelcometioaDmin یا CM-RCT-BETA" />
+        <button id="enterBtn" class="primary">ورود</button>
+      </div>
+      <div id="gateError" style="color: var(--danger); margin-top: 8px;"></div>
+    </section>
 
-  <!-- Chat -->
-  <section id="chatPanel" class="panel" style="display:none;">
-    <h3 id="userInfo"></h3>
-    <div id="chatLog" class="chat-log"></div>
-    <div style="margin-top:10px;">
-      <input id="msgInput" type="text" placeholder="پیام..." />
-      <button id="sendBtn">ارسال</button>
-    </div>
-  </section>
+    <!-- App -->
+    <section id="app" style="display:none;">
+      <div class="grid">
+        <!-- Profile + Members + Admin -->
+        <aside class="profile">
+          <div style="display:flex; align-items:center;">
+            <div id="avatar" class="avatar">🔰</div>
+            <div>
+              <div id="profileName" style="font-weight:700;">کاربر ناشناس</div>
+              <div id="profileRole" class="badge">نقش: recruit</div>
+            </div>
+          </div>
 
-  <!-- Admin Panel -->
-  <section id="adminPanel" class="panel" style="display:none;">
-    <h3>پنل مدیریت</h3>
-    <div class="admin-tools">
-      <button onclick="clearChat()">🧹 پاک کردن همه پیام‌ها</button>
-      <button onclick="showCodes()">🔑 نمایش کدهای ورود</button>
-      <div id="codesList" style="margin-top:10px; color:#a8ff60;"></div>
-    </div>
+          <hr style="border-color: rgba(136,201,153,0.3); margin: 12px 0;">
+          <div class="title">اتاق‌ها</div>
+          <div class="rooms" id="roomsBar"></div>
+          <p class="broadcast-note">📣 «کانال Code Mem» فقط برای Owner/Commander قابل ارسال است.</p>
 
-    <hr>
-    <h4>➕ اضافه کردن کد جدید</h4>
-    <input id="newCode" type="text" placeholder="کد ورود جدید..." />
-    <input id="newName" type="text" placeholder="نام کاربر..." />
-    <select id="newRole">
-      <option value="recruit">Recruit</option>
-      <option value="commander">Commander</option>
-      <option value="owner">Owner</option>
-    </select>
-    <button onclick="addCode()">ثبت کد</button>
-  </section>
+          <div class="section-title">اعضا</div>
+          <div id="membersList" class="members"></div>
+
+          <!-- DM Panel -->
+          <div id="dmPanel" class="panel dm-panel" style="display:none;">
+            <div class="dm-header">
+              <div class="title" id="dmTitle">پیام خصوصی</div>
+              <button id="closeDmBtn">بستن</button>
+            </div>
+            <div id="dmLog" class="dm-log"></div>
+            <div class="dm-input">
+              <input id="dmInput" type="text" placeholder="پیام خصوصی..." />
+              <button id="dmSendBtn" class="primary">ارسال</button>
+            </div>
+          </div>
+
+          <!-- Admin Panel -->
+          <div id="adminPanel" class="panel" style="display:none; margin-top:12px;">
+            <div class="title">پنل مدیریت</div>
+            <div class="admin-tools">
+              <button onclick="clearRoom()">🧹 پاک کردن پیام‌های اتاق فعلی</button>
+              <button onclick="showCodes()">🔑 نمایش کدهای ورود</button>
+              <div id="codesList" class="codes-list"></div>
+            </div>
+            <hr style="border-color: rgba(136,201,153,0.3); margin: 12px 0;">
+            <div class="title">➕ اضافه کردن کد جدید</div>
+            <input id="newCode" type="text" placeholder="کد ورود جدید..." />
+            <input id="newName" type="text" placeholder="نام کاربر..." />
+            <select id="newRole">
+              <option value="recruit">Recruit</option>
+              <option value="commander">Commander</option>
+              <option value="owner">Owner</option>
+            </select>
+            <button onclick="addCode()" class="primary">ثبت کد</button>
+          </div>
+        </aside>
+
+        <!-- Chat -->
+        <section class="panel">
+          <div class="title" id="roomTitle">اتاق: عمومی</div>
+          <div class="chat">
+            <div id="chatLog" class="chat-log"></div>
+            <div class="chat-input">
+              <input id="msgInput" type="text" placeholder="پیام خودت رو بنویس..." />
+              <button id="sendBtn" class="primary">ارسال</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">© Code Mem — اتحاد اخلاقی، امن و وایرال</div>
 
   <script>
-    // کدهای اولیه
+    // Access codes
     const ACCESS_CODES = {
-      "ownerBaranaWelcometioaDmin": { role:"owner", name:"Hossein Barana", admin:true },
-      "CM-CMD-ALPHA": { role:"commander", name:"@Germanynazy" },
-      "CM-RCT-BETA": { role:"recruit", name:"@ayhangta" }
+      "ownerBaranaWelcometioaDmin": { role: "owner", name: "Hossein Barana", admin: true },
+      "CM-CMD-ALPHA": { role: "commander", name: "@Germanynazy" },
+      "CM-RCT-BETA": { role: "recruit", name: "@ayhangta" },
+      "CM-PUBLIC-ACCESS": { role: "recruit", name: "memberpuplicac" }
     };
 
-    const STORAGE_KEY="codeMemChatLog";
-    let currentUser={ name:"کاربر ناشناس", role:"recruit" };
+    // Rooms (including broadcast channel)
+    const ROOMS = ["عمومی", "امنیت", "طنز", "کمپین‌ها", "کانال Code Mem"];
+    let currentRoom = "عمومی";
 
-    const gate=document.getElementById("gate");
-    const chatPanel=document.getElementById("chatPanel");
-    const adminPanel=document.getElementById("adminPanel");
-    const codeInput=document.getElementById("codeInput");
-    const enterBtn=document.getElementById("enterBtn");
-    const gateError=document.getElementById("gateError");
-    const userInfo=document.getElementById("userInfo");
-    const chatLog=document.getElementById("chatLog");
-    const msgInput=document.getElementById("msgInput");
-    const sendBtn=document.getElementById("sendBtn");
+    // Role classes
+    const ROLE_CLASS = { owner: "role-owner", commander: "role-commander", recruit: "role-recruit", system: "role-commander" };
 
-    function appendMessage({name,role,text}) {
-      const wrap=document.createElement("div");
-      wrap.className="msg";
-      const meta=document.createElement("div");
-      meta.className="meta";
-      const time=new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
-      meta.textContent=`${name} (${role}) • ${time}`;
-      const body=document.createElement("div");
-      body.textContent=text;
-      wrap.appendChild(meta); wrap.appendChild(body);
+    // DOM
+    const gate = document.getElementById("gate");
+    const app = document.getElementById("app");
+    const codeInput = document.getElementById("codeInput");
+    const enterBtn = document.getElementById("enterBtn");
+    const gateError = document.getElementById("gateError");
+    const avatar = document.getElementById("avatar");
+    const profileName = document.getElementById("profileName");
+    const profileRole = document.getElementById("profileRole");
+    const adminPanel = document.getElementById("adminPanel");
+    const roomsBar = document.getElementById("roomsBar");
+    const roomTitle = document.getElementById("roomTitle");
+    const chatLog = document.getElementById("chatLog");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const membersList = document.getElementById("membersList");
+    const dmPanel = document.getElementById("dmPanel");
+    const dmTitle = document.getElementById("dmTitle");
+    const dmLog = document.getElementById("dmLog");
+    const dmInput = document.getElementById("dmInput");
+    const dmSendBtn = document.getElementById("dmSendBtn");
+    const closeDmBtn = document.getElementById("closeDmBtn");
+
+    // Storage keys
+    const STORAGE_PREFIX = "codeMemRoom_";
+    const REACTIONS_PREFIX = "codeMemReactions_";
+    const DM_PREFIX = "codeMemDM_";
+    const EMOJIS = ["👍", "😂", "🔥", "❤️"];
+
+    let currentUser = { name: "کاربر ناشناس", role: "recruit" };
+    let dmTarget = null;
+
+    function storageKey(room) { return STORAGE_PREFIX + room; }
+    function reactionsKey(room) { return REACTIONS_PREFIX + room; }
+    function dmKey(userA, userB) {
+      const pair = [userA, userB].sort().join("__");
+      return DM_PREFIX + pair;
+    }
+
+    // Messages per room
+    function loadMessages(room) { const raw = localStorage.getItem(storageKey(room)); return raw ? JSON.parse(raw) : []; }
+    function saveMessages(room, list) { localStorage.setItem(storageKey(room), JSON.stringify(list)); }
+
+    // Reactions per room/message
+    function loadReactions(room) { const raw = localStorage.getItem(reactionsKey(room)); return raw ? JSON.parse(raw) : {}; }
+    function saveReactions(room, map) { localStorage.setItem(reactionsKey(room), JSON.stringify(map)); }
+
+    // DM storage
+    function loadDM(a, b) { const raw = localStorage.getItem(dmKey(a, b)); return raw ? JSON.parse(raw) : []; }
+    function saveDM(a, b, list) { localStorage.setItem(dmKey(a, b), JSON.stringify(list)); }
+
+    function appendMessage({ id, name, role, text, type = "normal", time }) {
+      const wrap = document.createElement("div");
+      wrap.className = "msg" + (type === "system" ? " system" : "") + (type === "warn" ? " warn" : "");
+      wrap.dataset.id = id || "";
+
+      const meta = document.createElement("div");
+      meta.className = "meta " + (ROLE_CLASS[role] || "");
+      const left = document.createElement("span");
+      left.textContent = `${name} • ${time || new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })}`;
+      const right = document.createElement("span");
+      right.textContent = `اتاق: ${currentRoom}`;
+      meta.appendChild(left); meta.appendChild(right);
+
+      const body = document.createElement("div");
+      body.className = "text";
+      body.textContent = text;
+
+      wrap.appendChild(meta);
+      wrap.appendChild(body);
+
+      // Reactions (skip for system/broadcast-only note)
+      if (type === "normal") {
+        const reactionsDiv = document.createElement("div");
+        reactionsDiv.className = "reactions";
+        const reactionsMap = loadReactions(currentRoom);
+        const msgReacts = reactionsMap[id] || {};
+        EMOJIS.forEach(emoji => {
+          const btn = document.createElement("div");
+          btn.className = "reaction";
+          const count = msgReacts[emoji] || 0;
+          btn.innerHTML = `<span class="emoji">${emoji}</span><span class="count">${count}</span>`;
+          btn.addEventListener("click", () => {
+            const map = loadReactions(currentRoom);
+            const current = map[id] || {};
+            current[emoji] = (current[emoji] || 0) + 1;
+            map[id] = current;
+            saveReactions(currentRoom, map);
+            renderRoom(currentRoom);
+          });
+          reactionsDiv.appendChild(btn);
+        });
+        wrap.appendChild(reactionsDiv);
+      }
+
       chatLog.appendChild(wrap);
-      chatLog.scrollTop=chatLog.scrollHeight;
+      chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    function loadHistory(){
-      chatLog.innerHTML="";
-      const raw=localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      try{ JSON.parse(raw).forEach(appendMessage);}catch(e){}
+    function renderRoom(room) {
+      chatLog.innerHTML = "";
+      const list = loadMessages(room);
+      list.forEach(msg => appendMessage(msg));
     }
 
-    function saveMessage(msg){
-      const raw=localStorage.getItem(STORAGE_KEY);
-      const list=raw?JSON.parse(raw):[];
-      list.push(msg);
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(list));
+    function setRoom(room) {
+      currentRoom = room;
+      roomTitle.textContent = `اتاق: ${room}`;
+      [...roomsBar.children].forEach(btn => btn.classList.toggle("active", btn.dataset.room === room));
+      renderRoom(room);
+      appendMessage({
+        id: "sys-" + Date.now(),
+        name: "سیستم",
+        role: "system",
+        text: `به اتاق «${room}» وارد شدی.`,
+        type: "system",
+        time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })
+      });
     }
 
-    enterBtn.addEventListener("click",()=>{
-      const code=(codeInput.value||"").trim();
-      const profile=ACCESS_CODES[code];
-      if(!profile){
-        gateError.textContent="کد نامعتبر است.";
+    function buildRoomsBar() {
+      roomsBar.innerHTML = "";
+      ROOMS.forEach(room => {
+        const btn = document.createElement("button");
+        btn.textContent = room;
+        btn.dataset.room = room;
+        btn.className = "badge";
+        btn.addEventListener("click", () => setRoom(room));
+        roomsBar.appendChild(btn);
+      });
+      setRoom(currentRoom);
+    }
+
+    function setProfile(profile) {
+      currentUser = { ...profile };
+      profileName.textContent = profile.name;
+      profileRole.textContent = `نقش: ${profile.role}`;
+      profileRole.className = "badge " + (ROLE_CLASS[profile.role] || "");
+      avatar.textContent = profile.role === "owner" ? "🔰" : profile.role === "commander" ? "🚀" : "🎯";
+      buildMembersList();
+    }
+
+    function buildMembersList() {
+      membersList.innerHTML = "";
+      const entries = Object.values(ACCESS_CODES).map(v => ({ name: v.name, role: v.role }));
+      // unique by name
+      const seen = new Set();
+      const members = entries.filter(e => { if (seen.has(e.name)) return false; seen.add(e.name); return true; });
+      members.forEach(m => {
+        const item = document.createElement("div");
+        item.className = "member-item";
+        const info = document.createElement("div");
+        info.innerHTML = `<span>${m.name}</span> <span class="badge ${ROLE_CLASS[m.role] || ""}">نقش: ${m.role}</span>`;
+        const dmBtn = document.createElement("button");
+        dmBtn.textContent = "پیام خصوصی";
+        dmBtn.addEventListener("click", () => openDM(m.name));
+        item.appendChild(info);
+        item.appendChild(dmBtn);
+        membersList.appendChild(item);
+      });
+    }
+
+    function openDM(targetName) {
+      if (targetName === currentUser.name) { alert("نمی‌تونی به خودت پیام خصوصی بفرستی."); return; }
+      dmTarget = targetName;
+      dmTitle.textContent = `پیام خصوصی با: ${targetName}`;
+      dmPanel.style.display = "block";
+      renderDM();
+    }
+
+    function closeDM() {
+      dmPanel.style.display = "none";
+      dmTarget = null;
+      dmLog.innerHTML = "";
+      dmInput.value = "";
+    }
+
+    function renderDM() {
+      if (!dmTarget) return;
+      dmLog.innerHTML = "";
+      const list = loadDM(currentUser.name, dmTarget);
+      list.forEach(m => {
+        const row = document.createElement("div");
+        row.className = "msg";
+        const meta = document.createElement("div");
+        meta.className = "meta " + (ROLE_CLASS[m.role] || "");
+        meta.textContent = `${m.from} • ${m.time}`;
+        const body = document.createElement("div");
+        body.className = "text";
+        body.textContent = m.text;
+        row.appendChild(meta); row.appendChild(body);
+        dmLog.appendChild(row);
+      });
+      dmLog.scrollTop = dmLog.scrollHeight;
+    }
+
+    function sendDM() {
+      if (!dmTarget) return;
+      const text = (dmInput.value || "").trim();
+      if (!text) return;
+      const list = loadDM(currentUser.name, dmTarget);
+      list.push({
+        from: currentUser.name,
+        to: dmTarget,
+        role: currentUser.role,
+        text,
+        time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })
+      });
+      saveDM(currentUser.name, dmTarget, list);
+      dmInput.value = "";
+      renderDM();
+    }
+
+    // Broadcast permission check
+    function canPostInRoom(room) {
+      if (room !== "کانال Code Mem") return true;
+      return currentUser.role === "owner" || currentUser.role === "commander";
+    }
+
+    enterBtn.addEventListener("click", () => {
+      const code = (codeInput.value || "").trim();
+      const profile = ACCESS_CODES[code];
+      if (!profile) {
+        gateError.textContent = "کد نامعتبر است. دوباره تلاش کن یا از مالک کد درست بگیر.";
         return;
       }
-      currentUser={...profile};
-      userInfo.textContent=`خوش آمدی ${profile.name} — نقش: ${profile.role}`;
-      gate.style.display="none";
-      chatPanel.style.display="block";
-      if(profile.admin){ adminPanel.style.display="block"; }
-      loadHistory();
-      appendMessage({name:"سیستم",role:"system",text:`${profile.name} وارد شد.`});
+      gateError.textContent = "";
+      gate.style.display = "none";
+      app.style.display = "block";
+      setProfile(profile);
+      if (profile.admin) adminPanel.style.display = "block";
+      buildRoomsBar();
+      appendMessage({
+        id: "sys-" + Date.now(),
+        name: "سیستم",
+        role: "system",
+        text: `ورود موفق: ${profile.name}`,
+        type: "system",
+        time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })
+      });
     });
 
-    sendBtn.addEventListener("click",()=>{
-      const text=(msgInput.value||"").trim();
-      if(!text) return;
-      const msg={name:currentUser.name,role:currentUser.role,text};
-      appendMessage(msg); saveMessage(msg);
-      msgInput.value="";
+    sendBtn.addEventListener("click", () => {
+      const text = (msgInput.value || "").trim();
+      if (!text) return;
+      if (!canPostInRoom(currentRoom)) {
+        alert("ارسال در «کانال Code Mem» فقط برای Owner/Commander مجاز است.");
+        return;
+      }
+      const id = "msg-" + Date.now();
+      const msg = {
+        id,
+        name: currentUser.name,
+        role: currentUser.role,
+        text,
+        type: "normal",
+        time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })
+      };
+      const list = loadMessages(currentRoom);
+      list.push(msg);
+      saveMessages(currentRoom, list);
+      const reacts = loadReactions(currentRoom);
+      if (!reacts[id]) { reacts[id] = {}; saveReactions(currentRoom, reacts); }
+      renderRoom(currentRoom);
+      msgInput.value = "";
     });
 
-    msgInput.addEventListener("keydown",(e)=>{
-      if(e.key==="Enter") sendBtn.click();
-    });
+    msgInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendBtn.click(); });
+    dmSendBtn.addEventListener("click", sendDM);
+    dmInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendDM(); });
+    closeDmBtn.addEventListener("click", closeDM);
 
-    function clearChat(){
-      localStorage.removeItem(STORAGE_KEY);
-      chatLog.innerHTML="";
-      appendMessage({name:"سیستم",role:"system",text:"همه پیام‌ها پاک شدند."});
+    // Admin actions
+    function clearRoom() {
+      localStorage.removeItem(storageKey(currentRoom));
+      localStorage.removeItem(reactionsKey(currentRoom));
+      chatLog.innerHTML = "";
+      appendMessage({
+        id: "sys-" + Date.now(),
+        name: "سیستم",
+        role: "system",
+        text: `پیام‌های اتاق «${currentRoom}» پاک شدند.`,
+        type: "warn",
+        time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })
+      });
     }
-
-    function showCodes(){
-      const list=Object.keys(ACCESS_CODES).map(c=>`• ${c}`).join("<br>");
-      document.getElementById("codesList").innerHTML=list;
-    }
-
-    function addCode(){
-      const code=document.getElementById("newCode").value.trim();
-      const name=document.getElementById("newName").value.trim();
-      const role=document.getElementById("newRole").value;
-      if(!code||!name){ alert("کد و نام باید وارد شوند."); return; }
-      ACCESS_CODES[code]={ role, name };
-      alert(`کد جدید اضافه شد: ${code} برای ${name} (${role})`);
-      showCodes();
-    }
-  </script>
-</body>
-  </html>
+    function showCodes() {
+      const list = Object.entries(ACCESS_CODES).map(([code, v]) => {
+        const 
