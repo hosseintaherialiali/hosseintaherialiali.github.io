@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <title>Code Mem Chatroom</title>
+  <style>
+    body {
+      background:#0d1b1e; color:#d0f0c0;
+      font-family:"Segoe UI",Tahoma,sans-serif; direction:rtl; margin:0;
+    }
+    header {
+      background:#1a3c40; color:#a8ff60;
+      text-align:center; padding:20px; font-size:1.8rem; font-weight:bold;
+    }
+    .panel {
+      background:#112d32; border:1px solid #88c999;
+      border-radius:12px; padding:16px; margin:20px auto; max-width:600px;
+    }
+    input,button,select {
+      padding:10px; border-radius:8px; border:1px solid #88c999;
+      background:rgba(136,201,153,0.08); color:#d0f0c0; margin:4px 0;
+    }
+    button { cursor:pointer; }
+    .chat-log {
+      background:#0f2428; border:1px solid #88c999;
+      border-radius:10px; padding:10px; height:300px; overflow-y:auto;
+    }
+    .msg { margin:8px 0; padding:6px; border-radius:8px;
+      background:rgba(168,255,96,0.06); }
+    .meta { font-size:0.85rem; color:#88c999; margin-bottom:4px; }
+    .admin-tools button { margin:5px 0; display:block; width:100%; }
+  </style>
+</head>
+<body>
+  <header>اتحادیه Code Mem — چت</header>
+
+  <!-- Gate -->
+  <section id="gate" class="panel">
+    <h3>ورود با کد</h3>
+    <input id="codeInput" type="text" placeholder="کد ورود..." />
+    <button id="enterBtn">ورود</button>
+    <div id="gateError" style="color:#ff6b6b; margin-top:8px;"></div>
+  </section>
+
+  <!-- Chat -->
+  <section id="chatPanel" class="panel" style="display:none;">
+    <h3 id="userInfo"></h3>
+    <div id="chatLog" class="chat-log"></div>
+    <div style="margin-top:10px;">
+      <input id="msgInput" type="text" placeholder="پیام..." />
+      <button id="sendBtn">ارسال</button>
+    </div>
+  </section>
+
+  <!-- Admin Panel -->
+  <section id="adminPanel" class="panel" style="display:none;">
+    <h3>پنل مدیریت</h3>
+    <div class="admin-tools">
+      <button onclick="clearChat()">🧹 پاک کردن همه پیام‌ها</button>
+      <button onclick="showCodes()">🔑 نمایش کدهای ورود</button>
+      <div id="codesList" style="margin-top:10px; color:#a8ff60;"></div>
+    </div>
+
+    <hr>
+    <h4>➕ اضافه کردن کد جدید</h4>
+    <input id="newCode" type="text" placeholder="کد ورود جدید..." />
+    <input id="newName" type="text" placeholder="نام کاربر..." />
+    <select id="newRole">
+      <option value="recruit">Recruit</option>
+      <option value="commander">Commander</option>
+      <option value="owner">Owner</option>
+    </select>
+    <button onclick="addCode()">ثبت کد</button>
+  </section>
+
+  <script>
+    // کدهای اولیه
+    const ACCESS_CODES = {
+      "ownerBaranaWelcometioaDmin": { role:"owner", name:"Hossein Barana", admin:true },
+      "CM-CMD-ALPHA": { role:"commander", name:"@Germanynazy" },
+      "CM-RCT-BETA": { role:"recruit", name:"@ayhangta" }
+    };
+
+    const STORAGE_KEY="codeMemChatLog";
+    let currentUser={ name:"کاربر ناشناس", role:"recruit" };
+
+    const gate=document.getElementById("gate");
+    const chatPanel=document.getElementById("chatPanel");
+    const adminPanel=document.getElementById("adminPanel");
+    const codeInput=document.getElementById("codeInput");
+    const enterBtn=document.getElementById("enterBtn");
+    const gateError=document.getElementById("gateError");
+    const userInfo=document.getElementById("userInfo");
+    const chatLog=document.getElementById("chatLog");
+    const msgInput=document.getElementById("msgInput");
+    const sendBtn=document.getElementById("sendBtn");
+
+    function appendMessage({name,role,text}) {
+      const wrap=document.createElement("div");
+      wrap.className="msg";
+      const meta=document.createElement("div");
+      meta.className="meta";
+      const time=new Date().toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"});
+      meta.textContent=`${name} (${role}) • ${time}`;
+      const body=document.createElement("div");
+      body.textContent=text;
+      wrap.appendChild(meta); wrap.appendChild(body);
+      chatLog.appendChild(wrap);
+      chatLog.scrollTop=chatLog.scrollHeight;
+    }
+
+    function loadHistory(){
+      chatLog.innerHTML="";
+      const raw=localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      try{ JSON.parse(raw).forEach(appendMessage);}catch(e){}
+    }
+
+    function saveMessage(msg){
+      const raw=localStorage.getItem(STORAGE_KEY);
+      const list=raw?JSON.parse(raw):[];
+      list.push(msg);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(list));
+    }
+
+    enterBtn.addEventListener("click",()=>{
+      const code=(codeInput.value||"").trim();
+      const profile=ACCESS_CODES[code];
+      if(!profile){
+        gateError.textContent="کد نامعتبر است.";
+        return;
+      }
+      currentUser={...profile};
+      userInfo.textContent=`خوش آمدی ${profile.name} — نقش: ${profile.role}`;
+      gate.style.display="none";
+      chatPanel.style.display="block";
+      if(profile.admin){ adminPanel.style.display="block"; }
+      loadHistory();
+      appendMessage({name:"سیستم",role:"system",text:`${profile.name} وارد شد.`});
+    });
+
+    sendBtn.addEventListener("click",()=>{
+      const text=(msgInput.value||"").trim();
+      if(!text) return;
+      const msg={name:currentUser.name,role:currentUser.role,text};
+      appendMessage(msg); saveMessage(msg);
+      msgInput.value="";
+    });
+
+    msgInput.addEventListener("keydown",(e)=>{
+      if(e.key==="Enter") sendBtn.click();
+    });
+
+    function clearChat(){
+      localStorage.removeItem(STORAGE_KEY);
+      chatLog.innerHTML="";
+      appendMessage({name:"سیستم",role:"system",text:"همه پیام‌ها پاک شدند."});
+    }
+
+    function showCodes(){
+      const list=Object.keys(ACCESS_CODES).map(c=>`• ${c}`).join("<br>");
+      document.getElementById("codesList").innerHTML=list;
+    }
+
+    function addCode(){
+      const code=document.getElementById("newCode").value.trim();
+      const name=document.getElementById("newName").value.trim();
+      const role=document.getElementById("newRole").value;
+      if(!code||!name){ alert("کد و نام باید وارد شوند."); return; }
+      ACCESS_CODES[code]={ role, name };
+      alert(`کد جدید اضافه شد: ${code} برای ${name} (${role})`);
+      showCodes();
+    }
+  </script>
+</body>
+  </html>
