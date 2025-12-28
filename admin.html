@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>پنل مدیریت اعضای Code Mem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg:#0d1b1e; --panel:#112d32; --accent:#a8ff60; --line:#88c999;
+      --text:#d0f0c0; --danger:#ff6b6b; --muted:#88c999;
+    }
+    *{box-sizing:border-box}
+    body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Tahoma;direction:rtl;margin:0}
+    header{background:#1a3c40;color:var(--accent);text-align:center;padding:20px;font-size:1.6rem;font-weight:800}
+    .wrap{max-width:900px;margin:0 auto;padding:16px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}
+    input,select,button,textarea{
+      padding:10px;border-radius:10px;border:1px solid var(--line);
+      background:rgba(136,201,153,0.08);color:var(--text);font-size:1rem
+    }
+    button{cursor:pointer}
+    button.primary{background:rgba(168,255,96,0.15);border-color:var(--accent)}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{border:1px solid var(--line);padding:8px;text-align:center}
+    th{background:#1a3c40;color:var(--accent)}
+    .actions button{margin:2px}
+    .error{color:var(--danger)}
+    .muted{color:var(--muted);font-size:0.9rem}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:800px){.grid2{grid-template-columns:1fr}}
+    .section-title{color:var(--accent);font-weight:700;margin-bottom:8px}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px dashed var(--line);border-radius:999px;background:rgba(136,201,153,0.08)}
+  </style>
+</head>
+<body>
+  <header>پنل مدیریت اعضای Code Mem</header>
+  <main class="wrap">
+    <!-- Login -->
+    <section class="panel" id="loginPanel">
+      <div class="section-title">🔑 ورود ادمین</div>
+      <div class="row">
+        <input id="adminCode" type="text" placeholder="کد ورود ادمین">
+        <button class="primary" onclick="login()">ورود</button>
+      </div>
+      <p id="loginError" class="error"></p>
+      <p class="muted">فقط با کد اختصاصی وارد می‌شی: <span class="badge">ADMIN663ADMINBARANAESFFXFJ</span></p>
+    </section>
+
+    <!-- Admin -->
+    <section class="panel" id="adminPanel" style="display:none;">
+      <div class="grid2">
+        <div>
+          <div class="section-title">➕ اضافه کردن عضو جدید</div>
+          <div class="row">
+            <input id="nameInput" type="text" placeholder="نام عضو">
+            <select id="rankInput">
+              <option value="Recruit">Recruit</option>
+              <option value="Commander">Commander</option>
+              <option value="Owner">Owner</option>
+            </select>
+            <input id="pointsInput" type="number" placeholder="امتیاز اولیه" value="0">
+            <button class="primary" onclick="addMember()">ثبت عضو</button>
+          </div>
+          <p class="muted">نام‌ها یکتا نیستن؛ اگر می‌خوای یکتا باشن، خودت رعایت کن یا از جستجو استفاده کن.</p>
+        </div>
+        <div>
+          <div class="section-title">🔎 جستجو و ابزارها</div>
+          <div class="row">
+            <input id="searchInput" type="text" placeholder="جستجو بر اساس نام...">
+            <button onclick="renderMembers()">اعمال جستجو</button>
+            <button onclick="resetSearch()">پاک کردن جستجو</button>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <button onclick="exportMembers()" class="primary">📤 خروجی JSON</button>
+            <button onclick="importMembersPrompt()">📥 ورود از JSON</button>
+            <button onclick="clearAll()" style="border-color:#ff6b6b;color:#ff6b6b">🧹 پاک‌سازی کامل</button>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border-color:rgba(136,201,153,0.3);margin:14px 0">
+
+      <div class="section-title">👥 لیست اعضا</div>
+      <table>
+        <thead>
+          <tr><th>نام</th><th>رنک</th><th>امتیاز</th><th>مدیریت</th></tr>
+        </thead>
+        <tbody id="membersTable"></tbody>
+      </table>
+      <p class="muted">نکته: ارتقا رنک به ترتیب Recruit → Commander → Owner انجام می‌شود.</p>
+    </section>
+  </main>
+
+  <script>
+    const ADMIN_CODE = "ADMIN663ADMINBARANAESFFXFJ";
+    const STORAGE_KEY = "codeMemMembers";
+
+    function login() {
+      const code = document.getElementById("adminCode").value.trim();
+      const err = document.getElementById("loginError");
+      if (code === ADMIN_CODE) {
+        document.getElementById("loginPanel").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+        err.textContent = "";
+        renderMembers();
+      } else {
+        err.textContent = "کد اشتباه است!";
+      }
+    }
+
+    function loadMembers() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+    function saveMembers(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function addMember() {
+      const name = document.getElementById("nameInput").value.trim();
+      const rank = document.getElementById("rankInput").value;
+      const points = parseInt(document.getElementById("pointsInput").value) || 0;
+      if (!name) return alert("نام عضو را وارد کنید");
+      const members = loadMembers();
+      members.push({ name, rank, points });
+      saveMembers(members);
+      document.getElementById("nameInput").value = "";
+      document.getElementById("pointsInput").value = "0";
+      renderMembers();
+    }
+
+    function renderMembers() {
+      const tbody = document.getElementById("membersTable");
+      const q = (document.getElementById("searchInput").value || "").trim();
+      const members = loadMembers();
+      const filtered = q ? members.filter(m => (m.name || "").includes(q)) : members;
+
+      tbody.innerHTML = "";
+      filtered.forEach((m, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${m.name}</td>
+          <td>${m.rank}</td>
+          <td>${m.points}</td>
+          <td class="actions">
+            <button onclick="changeRank(${i})">ارتقا رنک</button>
+            <button onclick="addPoints(${i},10)">+10 امتیاز</button>
+            <button onclick="addPoints(${i},-5)">-5 امتیاز</button>
+            <button onclick="editMember(${i})">✏️ ویرایش</button>
+            <button onclick="deleteMember(${i})">❌ حذف</button>
+          </td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    function resetSearch() {
+      document.getElementById("searchInput").value = "";
+      renderMembers();
+    }
+
+    function changeRank(i) {
+      const members = loadMembers();
+      const ranks = ["Recruit", "Commander", "Owner"];
+      const idx = ranks.indexOf(members[i].rank);
+      if (idx < ranks.length - 1) {
+        members[i].rank = ranks[idx + 1];
+        saveMembers(members);
+        renderMembers();
+      } else {
+        alert("این عضو در بالاترین رنک است.");
+      }
+    }
+
+    function addPoints(i, delta) {
+      const members = loadMembers();
+      members[i].points = (members[i].points || 0) + delta;
+      saveMembers(members);
+      renderMembers();
+    }
+
+    function editMember(i) {
+      const members = loadMembers();
+      const m = members[i];
+      const newName = prompt("نام جدید:", m.name);
+      if (newName === null) return;
+      const newRank = prompt("رنک جدید (Recruit/Commander/Owner):", m.rank);
+      if (newRank === null) return;
+      const newPointsStr = prompt("امتیاز جدید:", m.points);
+      if (newPointsStr === null) return;
+      const newPoints = parseInt(newPointsStr);
+      if (!newName.trim() || !["Recruit","Commander","Owner"].includes(newRank)) {
+        alert("ورودی نامعتبر است.");
+        return;
+      }
+      m.name = newName.trim();
+      m.rank = newRank;
+      m.points = isNaN(newPoints) ? m.points : newPoints;
+      saveMembers(members);
+      renderMembers();
+    }
+
+    function deleteMember(i) {
+      const members = loadMembers();
+      if (!confirm(`حذف ${members[i].name}؟`)) return;
+      members.splice(i, 1);
+      saveMembers(members);
+      renderMembers();
+    }
+
+    function exportMembers() {
+      const data = JSON.stringify(loadMembers(), null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "code_mem_members.json";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function importMembersPrompt() {
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = "application/json";
+      input.onchange = () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const list = JSON.parse(reader.result);
+            if (!Array.isArray(list)) throw new Error("فرمت نامعتبر");
+            saveMembers(list);
+            renderMembers();
+            alert("ورود داده‌ها انجام شد.");
+          } catch (e) {
+            alert("خطا در خواندن فایل JSON.");
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function clearAll() {
+      if (!confirm("پاک‌سازی کامل اعضا؟ این کار قابل بازگشت نیست.")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderMembers();
+    }
+  </script>
+</body>
+  </html>
