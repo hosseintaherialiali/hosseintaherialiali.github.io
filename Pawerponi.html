@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>پاورپوینت‌ساز کامل</title>
+
+  <!-- فونت فارسی -->
+  <link href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.2/Vazirmatn-font-face.css" rel="stylesheet" />
+  <!-- کتابخانه تولید پاورپوینت -->
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.11.2/dist/pptxgen.bundle.min.js"></script>
+
+  <style>
+    :root { --bg:#0f1220; --card:#171a2b; --text:#e8eaf6; --accent:#6c8cff; --muted:#9aa3b2; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Vazirmatn,Tahoma,sans-serif;background:linear-gradient(180deg,#121526 0%,#0f1220 100%);color:var(--text)}
+    header{padding:24px;text-align:center}
+    h1{margin:0 0 6px;font-size:1.6rem}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .panel{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b0f1a;color:var(--text)}
+    textarea{min-height:120px}
+    .btn{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--accent);color:#0b0f1a;text-decoration:none;font-weight:700;margin-right:8px}
+    .btn.secondary{background:#2a2f45;color:#e8eaf6}
+    .list{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 12px;border-radius:10px;background:#1c2036;border:1px solid rgba(255,255,255,.08);cursor:pointer}
+    .chip.active{background:#2a335a}
+    .preview{background:#0b0f1a;border-radius:12px;padding:12px;min-height:240px;position:relative;overflow:hidden}
+    .imgPreview{max-width:100%;max-height:160px;border-radius:10px;border:1px solid rgba(255,255,255,.12)}
+    footer{text-align:center;padding:16px;color:var(--muted)}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>پاورپوینت‌ساز کامل با نمودار و انیمیشن</h1>
+    <p>اسلاید بساز، تصویر و نمودار اضافه کن، انیمیشن بده، و خروجی پاورپوینت دانلود کن.</p>
+  </header>
+
+  <main class="container">
+    <!-- مدیریت اسلایدها -->
+    <section class="panel">
+      <div class="list" id="slidesList"></div>
+      <div style="margin-top:12px">
+        <button class="btn" id="addSlideBtn">افزودن اسلاید</button>
+        <button class="btn secondary" id="removeSlideBtn">حذف اسلاید فعلی</button>
+        <button class="btn secondary" id="moveLeftBtn">← جابه‌جایی به چپ</button>
+        <button class="btn secondary" id="moveRightBtn">جابه‌جایی به راست →</button>
+      </div>
+    </section>
+
+    <!-- ویرایش اسلاید + تصویر + نمودار + انیمیشن -->
+    <section class="panel grid">
+      <div>
+        <div style="margin-bottom:12px">
+          <label>قالب اسلاید</label>
+          <select id="themeSelect">
+            <option value="dark">تیره مدرن</option>
+            <option value="light">روشن مینیمال</option>
+            <option value="gradient">گرادیان</option>
+            <option value="classic">کلاسیک</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>عنوان</label>
+          <input id="titleInput" placeholder="عنوان اسلاید" />
+        </div>
+        <div style="margin-bottom:12px">
+          <label>زیرعنوان</label>
+          <input id="subtitleInput" placeholder="زیرعنوان یا توضیح کوتاه" />
+        </div>
+        <div style="margin-bottom:12px">
+          <label>متن</label>
+          <textarea id="bodyInput" placeholder="متن اصلی اسلاید"></textarea>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>پس‌زمینه</label>
+          <input id="bgInput" type="color" value="#0f1220" />
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label>انیمیشن متن</label>
+          <select id="textAnim">
+            <option value="">بدون</option>
+            <option value="appear">appear</option>
+            <option value="fade">fade</option>
+            <option value="fly">fly</option>
+            <option value="zoom">zoom</option>
+          </select>
+        </div>
+
+        <hr style="border-color:#2a2f45;margin:16px 0">
+
+        <div style="margin-bottom:12px">
+          <label>افزودن تصویر (PNG/JPG)</label>
+          <input id="imageInput" type="file" accept="image/*" />
+          <small style="color:#9aa3b2">تصویر به‌صورت Base64 ذخیره می‌شود و در خروجی پاورپوینت درج خواهد شد.</small>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>انیمیشن تصویر</label>
+          <select id="imgAnim">
+            <option value="">بدون</option>
+            <option value="appear">appear</option>
+            <option value="fade">fade</option>
+            <option value="fly">fly</option>
+            <option value="zoom">zoom</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>موقعیت تصویر (x,y,w,h — اینچ)</label>
+          <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+            <div><label>X</label><input id="imgX" type="number" value="0.8" step="0.1" /></div>
+            <div><label>Y</label><input id="imgY" type="number" value="3.0" step="0.1" /></div>
+            <div><label>عرض</label><input id="imgW" type="number" value="8.4" step="0.1" /></div>
+            <div><label>ارتفاع</label><input id="imgH" type="number" value="3.5" step="0.1" /></div>
+          </div>
+        </div>
+
+        <hr style="border-color:#2a2f45;margin:16px 0">
+
+        <div style="margin-bottom:12px">
+          <label>نوع نمودار</label>
+          <select id="chartType">
+            <option value="">بدون</option>
+            <option value="bar">ستونی</option>
+            <option value="line">خطی</option>
+            <option value="pie">دایره‌ای</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>برچسب‌ها (با کاما)</label>
+          <input id="chartLabels" placeholder="مثلاً: فروردین,اردیبهشت,خرداد" />
+        </div>
+        <div style="margin-bottom:12px">
+          <label>مقادیر (با کاما)</label>
+          <input id="chartValues" placeholder="مثلاً: 30,50,70" />
+        </div>
+
+        <button class="btn" id="saveSlideBtn">ذخیرهٔ تغییرات اسلاید</button>
+      </div>
+
+      <!-- پیش‌نمایش -->
+      <div>
+        <label>پیش‌نمایش</label>
+        <div class="preview" id="previewBox">
+          <h3 id="previewTitle" style="margin:0 0 6px"></h3>
+          <p id="previewSubtitle" style="margin:0 0 10px;opacity:.8"></p>
+          <div id="previewBody" style="white-space:pre-wrap;margin-bottom:10px"></div>
+          <img id="previewImage" class="imgPreview" alt="پیش‌نمایش تصویر" style="display:none" />
+        </div>
+      </div>
+    </section>
+
+    <!-- دانلود و ذخیره -->
+    <section class="panel">
+      <button class="btn" id="downloadBtn">دانلود پاورپوینت</button>
+      <span style="margin-right:8px;color:#9aa3b2">نام فایل:</span>
+      <input id="fileNameInput" value="ارائه-من" style="max-width:240px;display:inline-block" />
+      <button class="btn secondary" id="saveProjectBtn">ذخیرهٔ پروژه</button>
+      <button class="btn secondary" id="loadProjectBtn">بارگذاری پروژه</button>
+      <button class="btn secondary" id="exportJsonBtn">خروجی JSON</button>
+      <input id="importJsonInput" type="file" accept="application/json" style="display:none" />
+      <button class="btn secondary" id="importJsonBtn">ورودی JSON</button>
+    </section>
+  </main>
+
+  <footer>هر اسلاید یک آیین—با تصویر، نمودار و انیمیشن، ارائه‌ات زنده‌تره.</footer>
+
+  <script>
+    // داده‌های اسلایدها
+    const slides = [];
+    let currentIndex = -1;
+
+    // عناصر
+    const slidesList = document.getElementById('slidesList');
+    const addSlideBtn = document.getElementById('addSlideBtn');
+    const removeSlideBtn = document.getElementById('removeSlideBtn');
+    const moveLeftBtn = document.getElementById('moveLeftBtn');
+    const moveRightBtn = document.getElementById('moveRightBtn');
+
+    const titleInput = document.getElementById('titleInput');
+    const subtitleInput = document.getElementById('subtitleInput');
+    const bodyInput = document.getElementById('bodyInput');
+    const bgInput = document.getElementById('bgInput');
+    const themeSelect = document.getElementById('themeSelect');
+
+    const textAnim = document.getElementById('textAnim');
+    const imageInput = document.getElementById('imageInput');
+    const imgAnim = document.getElementById('imgAnim');
+    const imgX = document.getElementById('imgX');
+    const imgY = document.getElementById('imgY');
+    const imgW = document.getElementById('imgW');
+    const imgH = document.getElementById('imgH');
+
+    const chartType = document.getElementById('chartType');
+    const chartLabels = document.getElementById('chartLabels');
+    const chartValues = document.getElementById('chartValues');
+
+    const saveSlideBtn = document.getElementById('saveSlideBtn');
+
+    const previewBox = document.getElementById('previewBox');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewSubtitle = document.getElementById('previewSubtitle');
+    const previewBody = document.getElementById('previewBody');
+    const previewImage = document.getElementById('previewImage');
+
+    const downloadBtn = document.getElementById('downloadBtn');
+    const fileNameInput = document.getElementById('fileNameInput');
+
+    const saveProjectBtn = document.getElementById('saveProjectBtn');
+    const loadProjectBtn = document.getElementById('loadProjectBtn');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const importJsonBtn = document.getElementById('importJsonBtn');
+    const importJsonInput = document.getElementById('importJsonInput');
+
+    // ابزارها
+    function renderSlidesList() {
+      slidesList.innerHTML = '';
+      slides.forEach((s, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (i === currentIndex ? ' active' : '');
+        chip.textContent = `اسلاید ${i + 1}`;
+        chip.onclick = () => selectSlide(i);
+        slidesList.appendChild(chip);
+      });
+    }
+
+    function selectSlide(i) {
+      currentIndex = i;
+      const s = slides[i];
+      titleInput.value = s.title || '';
+      subtitleInput.value = s.subtitle || '';
+      bodyInput.value = s.body || '';
+      bgInput.value = s.bg || '#0f1220';
+      themeSelect.value = s.theme || 'dark';
+
+      textAnim.value = s.textAnim || '';
+      imgAnim.value = s.imgAnim || '';
+
+      // تصویر
+      if (s.image && s.image.dataUrl) {
+        previewImage.src = s.image.dataUrl;
+        previewImage.style.display = 'block';
+      } else {
+        previewImage.style.display = 'none';
+        previewImage.src = '';
+      }
+      imgX.value = s.image?.x ?? 0.8;
+      imgY.value = s.image?.y ?? 3.0;
+      imgW.value = s.image?.w ?? 8.4;
+      imgH.value = s.image?.h ?? 3.5;
+
+      // نمودار
+      chartType.value = s.chart?.type || '';
+      chartLabels.value = s.chart?.labels?.join(',') || '';
+      chartValues.value = s.chart?.values?.join(',') || '';
+
+      updatePreview();
+      renderSlidesList();
+    }
+
+    function updatePreview() {
+      previewTitle.textContent = titleInput.value;
+      previewSubtitle.textContent = subtitleInput.value;
+      previewBody.textContent = bodyInput.value;
+      previewBox.style.background = bgInput.value;
+    }
+
+    [titleInput, subtitleInput, bodyInput, bgInput].forEach(el => {
+      el.addEventListener('input', updatePreview);
+    });
+
+    addSlideBtn.onclick = () => {
+      slides.push({ title:'', subtitle:'', body:'', bg:'#0f1220', theme:'dark', textAnim:'', imgAnim:'', image:null, chart:null });
+      renderSlidesList();
+      selectSlide(slides.length - 1);
+    };
+
+    removeSlideBtn.onclick = () => {
+      if (currentIndex < 0) return;
+      slides.splice(currentIndex, 1);
+      currentIndex = slides.length ? Math.max(0, currentIndex - 1) : -1;
+      renderSlidesList();
+      if (currentIndex >= 0) selectSlide(currentIndex);
+      else {
+        titleInput.value = subtitleInput.value = bodyInput.value = '';
+        previewTitle.textContent = previewSubtitle.textContent = previewBody.textContent = '';
+        previewImage.style.display = 'none';
+      }
+    };
+
+    moveLeftBtn.onclick = () => {
+      if (currentIndex > 0) {
+        const tmp = slides[currentIndex - 1];
+        slides[currentIndex - 1] = slides[currentIndex];
+        slides[currentIndex] = tmp;
+        currentIndex -= 1;
+        renderSlidesList();
+      }
+    };
+
+    moveRightBtn.onclick = () => {
+      if (currentIndex >= 0 && currentIndex < slides.length - 1) {
+        const tmp = slides[currentIndex + 1];
+        slides[currentIndex + 1] = slides[currentIndex];
+        slides[currentIndex] = tmp;
+        currentIndex += 1;
+        renderSlidesList();
+      }
+    };
+
+    saveSlideBtn.onclick = () => {
+      if (currentIndex < 0) return;
+      slides[currentIndex] = {
+        title: titleInput.value,
+        subtitle: subtitleInput.value,
+        body: bodyInput.value,
+        bg: bgInput.value,
+        theme: themeSelect.value,
+        textAnim: textAnim.value,
+        imgAnim: imgAnim.value,
+        image: slides[currentIndex].image ? {
+          ...slides[currentIndex].image,
+          x: parseFloat(imgX.value),
+          y: parseFloat(imgY.value),
+          w: parseFloat(imgW.value),
+          h: parseFloat(imgH.value),
+        } : null,
+        chart: chartType.value ? {
+          type: chartType.value,
+          labels: chartLabels.value.split(',').map(s => s.trim()).filter(Boolean),
+          values: chartValues.value.split(',').map(v => Number(v.trim())).filter(v => !isNaN(v))
+        } : null
+      };
+      renderSlidesList();
+    };
+
+    imageInput.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        previewImage.src = dataUrl;
+        previewImage.style.display = 'block';
+        if (currentIndex >= 0) {
+          slides[currentIndex].image = {
+            dataUrl,
+            x: parseFloat(imgX.value),
+            y: parseFloat(imgY.value),
+            w: parseFloat(imgW.value),
+            h: parseFloat(imgH.value),
+          };
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    downloadBtn.onclick = async () => {
+      if (!slides.length) return alert('هیچ اسلایدی وجود ندارد.');
+      const pptx = new PptxGenJS();
+      pptx.author = 'پاورپوینت‌ساز تحت وب';
+      pptx.company = 'ارائهٔ سریع';
+      pptx.title = fileNameInput.value || 'ارائه-من';
+
+      slides.forEach(s => {
+        const slide = pptx.addSlide();
+        slide.background = { color: s.bg || '#0f1220' };
+
+        const titleColor = s.theme === 'light' ? '1b2134' : 'e8eaf6';
+        const subColor   = s.theme === 'light' ? '3b4a6b' : 'cfd6ff';
+        const bodyColor  = s.theme === 'light' ? '1b2134' : 'e8eaf6';
+
+        if (s.title) {
+          slide.addText(s.title, {
+            x: 0.5, y: 0.5, w: 9, h: 1,
+            fontFace: 'Vazirmatn', fontSize: 28, bold: true,
+            color: titleColor, align: 'center',
+            anim: s.textAnim || undefined
+          });
+        }
+        if (s.subtitle) {
+          slide.addText(s.subtitle, {
+            x: 0.5, y: 1.2, w: 9, h: 0.6,
+            fontFace: 'Vazirmatn', fontSize: 18,
+            color: subColor, align: 'center'
+          });
+        }
+        if (s.body) {
+          slide.addText(s.body, {
+            x: 0.8, y: 2.0, w: 8.4, h: 2.6,
+            fontFace: 'Vazirmatn', fontSize: 16,
+            color: bodyColor, align: 'right',
+            anim: s.textAnim || undefined
+          });
+        }
+
+        if (s.image && s.image.dataUrl) {
+          slide.addImage({
+            data: s.image.dataUrl,
+            x: s.image.x ?? 0.8,
+            y: s.image.y ?? 3.0,
+            w: s.image.w ?? 8.4,
+            h: s.image.h ?? 3.5,
+            anim: s.imgAnim || undefined
+          });
+        }
+
+        if (s.chart) {
+          const chartData = [{ name: 'داده‌ها', labels: s.chart.labels, values: s.chart.values }];
+          const chartTypeMap = { bar: pptx.ChartType.bar, line: pptx.ChartType.line, pie: pptx.ChartType.pie };
+          slide.addChart(chartTypeMap[s.chart.type], chartData, { x: 1, y: 4, w: 8, h: 3 });
+        }
+
+        if (s.theme === 'gradient') {
+          slide.addShape(pptx.ShapeType.rect, {
+            x: 0.5, y: 5.8, w: 9, h: 0.2,
+            fill: { color: '6c8cff' }, line: { color: '6c8cff' }
+          });
+        }
+      });
+
+      await pptx.writeFile({ fileName: (fileNameInput.value || 'ارائه-من') + '.pptx' });
+    };
+
+    // ذخیره/بارگذاری پروژه در مرورگر
+    saveProjectBtn.onclick = () => {
+      localStorage.setItem('pptxProject', JSON.stringify({ slides, name: fileNameInput.value }));
+      alert('پروژه ذخیره شد.');
+    };
+    loadProjectBtn.onclick = () => {
+      const data = localStorage.getItem('pptxProject');
+      if (!data) return alert('پروژه‌ای یافت نشد.');
+      const obj = JSON.parse(data);
+      slides.splice(0, slides.length, ...obj.slides);
+      fileNameInput.value = obj.name || 'ارائه-من';
+      renderSlidesList();
+      if (slides.length) selectSlide(0);
+    };
+
+    exportJsonBtn.onclick = () => {
+      const blob = new Blob([JSON.stringify({ slides, name: fileNameInput.value }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (fileNameInput.value || 'ارائه-من') + '.json';
+      a.click();
+    };
+    importJsonBtn.onclick = () => importJsonInput.click();
+    importJsonInput.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const obj = JSON.parse(text);
+      slides.splice(0, slides.length, ...obj.slides);
+      fileNameInput.value = obj.name || 'ارائه-من';
+      renderSlidesList();
+      if (slides.length) selectSlide(0);
+    };
+
+    // شروع با یک اسلاید نمونه
+    addSlideBtn.click();
+    titleInput.value = 'عنوان نمونه';
+    subtitleInput.value = 'زیرعنوان نمونه';
+    bodyInput.value = 'این یک متن نمونه برای اسلاید اول است.\nمی‌توانید آن را تغییر دهید.';
+    previewBox.style.background = bgInput.value;
+    saveSlideBtn.click();
+  </script>
+</body>
+</html>
